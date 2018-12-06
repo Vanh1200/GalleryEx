@@ -2,6 +2,7 @@ package com.example.vanh1200.galleryex;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
@@ -17,7 +18,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoadImageAsync.LoadImageListener {
     private static final String TAG = "MainActivity";
     private static final int PERMISSION_READ_EXTERNAL_STORAGE = 1;
     private static final int TWO_COLUMNS = 2;
@@ -25,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private String[] mPermissions = {Manifest.permission.READ_EXTERNAL_STORAGE};
     private RecyclerView mRecyclerImage;
     private ArrayList<Image> mImages;
+    private ImageAdapter mImageAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,9 +39,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void initViews() {
         mRecyclerImage = findViewById(R.id.recycler_image);
-        ImageAdapter imageAdapter = new ImageAdapter(getImagePath(this));
+        mImages = new ArrayList<>();
+        mImageAdapter = new ImageAdapter(mImages);
         mRecyclerImage.setLayoutManager(new GridLayoutManager(this, TWO_COLUMNS));
-        mRecyclerImage.setAdapter(imageAdapter);
+        mRecyclerImage.setAdapter(mImageAdapter);
+        LoadImageAsync loadImageAsync = new LoadImageAsync(this, this);
+        loadImageAsync.execute();
     }
 
     private boolean checkPermission(String[] permissions) {
@@ -73,28 +78,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public ArrayList<Image> getImagePath(Context context) {
-        mImages = new ArrayList<>();
-        Uri uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-        Cursor cursor = context.getContentResolver().query(uri,
-                null, null, null, null);
-        cursor.moveToFirst();
-        int indexPath = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-        int indexCreatedDate = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATE_TAKEN);
-        if (cursor != null) {
-            do {
-                String path = cursor.getString(indexPath);
-                long createdDate = cursor.getLong(indexCreatedDate);
-                Image image = new Image(getDate(createdDate), path);
-                mImages.add(image);
-            } while (cursor.moveToNext());
-        }
-        return mImages;
+
+    public static Intent getMainIntent(Context context){
+        return new Intent(context, MainActivity.class);
     }
 
-    public String getDate(long milliSeconds) {
-        SimpleDateFormat format = new SimpleDateFormat(DATE_FORMAT);
-        return format.format(new Date(milliSeconds));
+    @Override
+    public void loadImageResult(ArrayList<Image> images) {
+        mImageAdapter.update(images);
     }
-
 }

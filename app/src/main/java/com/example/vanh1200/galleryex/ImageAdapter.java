@@ -69,4 +69,9 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
             mTextDate.setText(image.getDate());
         }
     }
+
+    public void update(ArrayList<Image> images){
+        mImages.addAll(images);
+        notifyDataSetChanged();
+    }
 }
